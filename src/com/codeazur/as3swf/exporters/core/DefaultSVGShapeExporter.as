@@ -43,8 +43,8 @@ package com.codeazur.as3swf.exporters.core
 		override public function moveTo(x:Number, y:Number):void {
 			currentDrawCommand = "";
 			pathData += "M" +
-				NumberUtils.roundPixels20(x) + " " + 
-				NumberUtils.roundPixels20(y) + " ";
+				roundPixels(x) + " " + 
+				roundPixels(y) + " ";
 		}
 		
 		override public function lineTo(x:Number, y:Number):void {
@@ -53,8 +53,8 @@ package com.codeazur.as3swf.exporters.core
 				pathData += "L";
 			}
 			pathData += 
-				NumberUtils.roundPixels20(x) + " " + 
-				NumberUtils.roundPixels20(y) + " ";
+				roundPixels(x) + " " + 
+				roundPixels(y) + " ";
 		}
 		
 		override public function curveTo(controlX:Number, controlY:Number, anchorX:Number, anchorY:Number):void {
@@ -63,16 +63,19 @@ package com.codeazur.as3swf.exporters.core
 				pathData += "Q";
 			}
 			pathData += 
-				NumberUtils.roundPixels20(controlX) + " " + 
-				NumberUtils.roundPixels20(controlY) + " " + 
-				NumberUtils.roundPixels20(anchorX) + " " + 
-				NumberUtils.roundPixels20(anchorY) + " ";
+				roundPixels(controlX) + " " + 
+				roundPixels(controlY) + " " + 
+				roundPixels(anchorX) + " " + 
+				roundPixels(anchorY) + " ";
 		}
 		
 		override public function endLines():void {
 			finalizePath();
 		}
-
+		
+		private function roundPixels(value:Number):Number{
+			return NumberUtils.roundPixels20(value)
+		}
 		
 		protected function finalizePath():void {
 			pathData = "";

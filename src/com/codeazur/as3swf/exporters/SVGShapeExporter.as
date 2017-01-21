@@ -12,6 +12,8 @@ package com.codeazur.as3swf.exporters
 	import flash.display.LineScaleMode;
 	import flash.display.SpreadMethod;
 	import flash.geom.Matrix;
+	import flash.utils.ByteArray;
+	import mx.utils.SHA256;
 	
 	public class SVGShapeExporter extends DefaultSVGShapeExporter
 	{
@@ -40,19 +42,27 @@ package com.codeazur.as3swf.exporters
 			if(alpha != 1) { path.@["fill-opacity"] = alpha; }
 		}
 		
+		private function gradientId(gradient:XML):String{
+			var bytes:ByteArray = new ByteArray()
+			bytes.writeUTFBytes(gradient.toXMLString())
+			bytes.position = 0
+			return SHA256.computeDigest(bytes).substring(0, 16)
+		}
+		
 		override public function beginGradientFill(type:String, colors:Array, alphas:Array, ratios:Array, matrix:Matrix = null, spreadMethod:String = SpreadMethod.PAD, interpolationMethod:String = InterpolationMethod.RGB, focalPointRatio:Number = 0):void {
 			finalizePath();
 			var gradient:XML = (type == GradientType.LINEAR) ? <linearGradient /> : <radialGradient />;
 			populateGradientElement(gradient, type, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio);
-			var id:int = gradients.indexOf(gradient.toXMLString());
-			if(id < 0) {
-				id = gradients.length;
-				gradients.push(gradient.toXMLString());
+			
+			var id:String = gradientId(gradient)
+			if(gradients.indexOf(id) == -1){
+				gradient.@id = id;
+				svg.s::defs.appendChild(gradient);
+				gradients.push(id)
 			}
-			gradient.@id = "gradient" + id;
+			
 			path.@stroke = "none";
-			path.@fill = "url(#gradient" + id + ")";
-			svg.s::defs.appendChild(gradient);
+			path.@fill = "url(#" + id + ")";
 		}
 
 		override public function beginBitmapFill(bitmapId:uint, matrix:Matrix = null, repeat:Boolean = true, smooth:Boolean = false):void {
@@ -86,15 +96,16 @@ package com.codeazur.as3swf.exporters
 			delete path.@["stroke-opacity"]
 			var gradient:XML = (type == GradientType.LINEAR) ? <linearGradient /> : <radialGradient />;
 			populateGradientElement(gradient, type, colors, alphas, ratios, matrix, spreadMethod, interpolationMethod, focalPointRatio);
-			var id:int = gradients.indexOf(gradient.toXMLString());
-			if(id < 0) {
-				id = gradients.length;
-				gradients.push(gradient.toXMLString());
+			
+			var id:String = gradientId(gradient)
+			if(gradients.indexOf(id) == -1){
+				gradient.@id = id;
+				svg.s::defs.appendChild(gradient);
+				gradients.push(id)
 			}
-			gradient.@id = "gradient" + id;
-			path.@stroke = "url(#gradient" + id + ")";
+			
+			path.@stroke = "url(#" + id + ")";
 			path.@fill = "none";
-			svg.s::defs.appendChild(gradient);
 		}
 
 		
