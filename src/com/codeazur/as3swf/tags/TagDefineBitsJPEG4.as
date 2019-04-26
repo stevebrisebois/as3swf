@@ -2,8 +2,6 @@
 {
 	import com.codeazur.as3swf.SWFData;
 	import com.codeazur.as3swf.data.consts.BitmapType;
-
-	import flash.utils.ByteArray;
 	
 	public class TagDefineBitsJPEG4 extends TagDefineBitsJPEG3 implements IDefinitionTag
 	{

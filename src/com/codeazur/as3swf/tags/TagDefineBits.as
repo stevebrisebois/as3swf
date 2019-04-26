@@ -64,7 +64,7 @@
 		
 		protected function exportCompleteHandler(event:Event):void {
 			var loader:Loader = event.target.loader as Loader;
-			var bitmapData:BitmapData = new BitmapData(loader.content.width, loader.content.height);
+			var bitmapData:BitmapData = new BitmapData(loader.content.width, loader.content.height, true, 0x00000000);
 			bitmapData.draw(loader);
 			onCompleteCallback(bitmapData);
 		}

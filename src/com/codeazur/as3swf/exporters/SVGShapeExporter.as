@@ -5,6 +5,7 @@ package com.codeazur.as3swf.exporters
 	import com.codeazur.as3swf.utils.ColorUtils;
 	import com.codeazur.utils.StringUtils;
 	
+	import flash.display.BitmapData;
 	import flash.display.CapsStyle;
 	import flash.display.GradientType;
 	import flash.display.InterpolationMethod;
@@ -13,19 +14,28 @@ package com.codeazur.as3swf.exporters
 	import flash.display.SpreadMethod;
 	import flash.geom.Matrix;
 	import flash.utils.ByteArray;
+	import flash.utils.Dictionary;
+	
 	import mx.utils.SHA256;
 	
 	public class SVGShapeExporter extends DefaultSVGShapeExporter
 	{
+		
 		protected static const s:Namespace = new Namespace("s", "http://www.w3.org/2000/svg");
 		protected static const xlink:Namespace = new Namespace("xlink", "http://www.w3.org/1999/xlink");
-				
+		
 		protected var _svg:XML;
 		protected var path:XML;
-		protected var gradients:Vector.<String>;
 		
-		public function SVGShapeExporter(swf:SWF) {
+		private var gradients:Vector.<String>;
+		
+		private var idNamespace:String;
+		private var bitmaps:Dictionary; /* of bitmapId, BitmapData*/
+		
+		public function SVGShapeExporter(swf:SWF, idNamespace:String, bitmaps:Dictionary) {
 			super(swf);
+			this.idNamespace = idNamespace;
+			this.bitmaps = bitmaps;
 		}
 		
 		public function get svg():XML { return _svg; }
@@ -49,6 +59,13 @@ package com.codeazur.as3swf.exporters
 			return SHA256.computeDigest(bytes).substring(0, 16)
 		}
 		
+		private function patternId(digest:String):String{
+			var bytes:ByteArray = new ByteArray()
+			bytes.writeUTFBytes(digest)
+			bytes.position = 0
+			return SHA256.computeDigest(bytes).substring(0, 16)
+		}
+		
 		override public function beginGradientFill(type:String, colors:Array, alphas:Array, ratios:Array, matrix:Matrix = null, spreadMethod:String = SpreadMethod.PAD, interpolationMethod:String = InterpolationMethod.RGB, focalPointRatio:Number = 0):void {
 			finalizePath();
 			var gradient:XML = (type == GradientType.LINEAR) ? <linearGradient /> : <radialGradient />;
@@ -58,7 +75,7 @@ package com.codeazur.as3swf.exporters
 			if(gradients.indexOf(id) == -1){
 				gradient.@id = id;
 				svg.s::defs.appendChild(gradient);
-				gradients.push(id)
+				gradients.push(id);
 			}
 			
 			path.@stroke = "none";
@@ -66,7 +83,36 @@ package com.codeazur.as3swf.exporters
 		}
 
 		override public function beginBitmapFill(bitmapId:uint, matrix:Matrix = null, repeat:Boolean = true, smooth:Boolean = false):void {
-			throw(new Error("Bitmap fills are not yet supported for shape export."));
+			try{
+				finalizePath();
+				
+				var matrixValues:Array = [matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty];
+				var fillTransform:String = "matrix(" + matrixValues.join(" ") + ")";
+				
+				var patternId:String = 
+					this.patternId(
+						JSON.stringify(
+							{
+								bitmapId: bitmapId, 
+								matrix: matrixValues, 
+								repeat: repeat, 
+								smooth: smooth
+							}));
+				
+				var bitmapData:BitmapData = bitmaps[bitmapId];
+				var patternId:String = idNamespace + "pattern_" + patternId;
+				var bitmapHref:String = "#" + idNamespace + "bitmap_" + (bitmapId++);
+				
+				var pattern:XML = 
+					<pattern id={patternId} patternUnits="userSpaceOnUse" width={bitmapData.width} height={bitmapData.height}>
+						<use transform={fillTransform} href={bitmapHref}/>
+					</pattern>;
+				svg.s::defs.appendChild(pattern);
+				path.@fill = "url(#" + patternId + ")";
+			}catch(e:Error){
+				trace(e.message)
+				trace(e.getStackTrace())
+			}
 		}
 		
 		override public function lineStyle(thickness:Number = NaN, color:uint = 0, alpha:Number = 1.0, pixelHinting:Boolean = false, scaleMode:String = LineScaleMode.NORMAL, startCaps:String = null, endCaps:String = null, joints:String = null, miterLimit:Number = 3):void {
@@ -107,7 +153,6 @@ package com.codeazur.as3swf.exporters
 			path.@stroke = "url(#" + id + ")";
 			path.@fill = "none";
 		}
-
 		
 		override protected function finalizePath():void {
 			if(path && pathData != "") {
@@ -117,7 +162,6 @@ package com.codeazur.as3swf.exporters
 			path = <path />;
 			super.finalizePath();
 		}
-		
 		
 		protected function populateGradientElement(gradient:XML, type:String, colors:Array, alphas:Array, ratios:Array, matrix:Matrix, spreadMethod:String, interpolationMethod:String, focalPointRatio:Number):void {
 			gradient.@gradientUnits = "userSpaceOnUse";

@@ -1,9 +1,5 @@
 ﻿package com.codeazur.as3swf.exporters.core
 {
-	import flash.display.BitmapData;
-	import flash.display.InterpolationMethod;
-	import flash.display.LineScaleMode;
-	import flash.display.SpreadMethod;
 	import flash.geom.Matrix;
 	
 	public interface IShapeExporter
