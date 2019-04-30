@@ -1,7 +1,5 @@
 ﻿package com.codeazur.as3swf.tags
 {
-	import com.codeazur.as3swf.SWFData;
-	
 	public class TagDefineShape3 extends TagDefineShape2 implements IDefinitionTag
 	{
 		public static const TYPE:uint = 32;

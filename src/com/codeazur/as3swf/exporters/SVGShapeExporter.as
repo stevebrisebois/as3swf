@@ -87,7 +87,7 @@ package com.codeazur.as3swf.exporters
 				finalizePath();
 				
 				var matrixValues:Array = [matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty];
-				var fillTransform:String = "matrix(" + matrixValues.join(" ") + ")";
+				var patternTransform:String = "matrix(" + matrixValues.join(" ") + ")";
 				
 				var patternId:String = 
 					this.patternId(
@@ -100,12 +100,11 @@ package com.codeazur.as3swf.exporters
 							}));
 				
 				var bitmapData:BitmapData = bitmaps[bitmapId];
-				var patternId:String = idNamespace + "pattern_" + patternId;
 				var bitmapHref:String = "#" + idNamespace + "bitmap_" + (bitmapId++);
 				
 				var pattern:XML = 
-					<pattern id={patternId} patternUnits="userSpaceOnUse" width={bitmapData.width} height={bitmapData.height}>
-						<use transform={fillTransform} href={bitmapHref}/>
+					<pattern id={patternId} patternUnits="userSpaceOnUse" patternTransform={patternTransform} width={bitmapData.width} height={bitmapData.height}>
+						<use href={bitmapHref}/>
 					</pattern>;
 				svg.s::defs.appendChild(pattern);
 				path.@fill = "url(#" + patternId + ")";
